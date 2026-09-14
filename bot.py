@@ -935,7 +935,8 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 🚀 ЗАПУСК
 # =========================
 
-def main():
+def main(): 
+    threading.Thread(target=run_web_server, daemon=True).start()
 
     app = Application.builder().token(TOKEN).build()
 
