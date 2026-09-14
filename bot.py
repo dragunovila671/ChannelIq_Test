@@ -1,11 +1,21 @@
 import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    ReplyKeyboardMarkup,
+)
+
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
     ContextTypes,
+    MessageHandler,
+    filters,
 )
 
 # ==================================================
@@ -30,6 +40,18 @@ MAIN_MENU = [
     ["📈 Развитие канала"],
     ["⚙️ Помощь", "ℹ️ О боте"]
 ]
+
+class HealthHandler(BaseHTTPRequestHandler):
+   
+
+
+
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    server.serve_forever()
+
 
 
 def main_keyboard():
