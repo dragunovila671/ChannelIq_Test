@@ -1,5 +1,7 @@
 import os
 import threading
+import sqlite3
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from telegram import (
@@ -26,7 +28,113 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 if not TOKEN:
     raise RuntimeError("Ошибка: переменная BOT_TOKEN не задана")
+# =========================
+# 📊 СТАТИСТИКА ПОЛЬЗОВАТЕЛЕЙ
+# =========================
 
+DB_FILE = "channeliq_stats.db"
+
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            first_name TEXT,
+            first_seen TEXT,
+            last_seen TEXT
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def register_user(user):
+    if not user:
+        return
+
+    now = datetime.now().isoformat()
+
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT user_id FROM users WHERE user_id = ?",
+        (user.id,)
+    )
+
+    if cursor.fetchone():
+        cursor.execute("""
+            UPDATE users
+            SET username = ?, first_name = ?, last_seen = ?
+            WHERE user_id = ?
+        """, (
+            user.username,
+            user.first_name,
+            now,
+            user.id
+        ))
+    else:
+        cursor.execute("""
+            INSERT INTO users
+            (user_id, username, first_name, first_seen, last_seen)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            user.id,
+            user.username,
+            user.first_name,
+            now,
+            now
+        ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_stats():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total = cursor.fetchone()[0]
+
+    today = datetime.now().date().isoformat()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM users
+        WHERE date(first_seen) = ?
+    """, (today,))
+
+    today_users = cursor.fetchone()[0]
+
+    week_ago = (datetime.now() - timedelta(days=7)).isoformat()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM users
+        WHERE first_seen >= ?
+    """, (week_ago,))
+
+    week_users = cursor.fetchone()[0]
+
+    day_ago = (datetime.now() - timedelta(days=1)).isoformat()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM users
+        WHERE last_seen >= ?
+    """, (day_ago,))
+
+    active_24h = cursor.fetchone()[0]
+
+    conn.close()
+
+    return total, today_users, week_users, active_24h
 
 # =========================
 # 🏠 ГЛАВНОЕ МЕНЮ
@@ -937,14 +1045,20 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 🚀 ЗАПУСК
 # =========================
 
-def main(): 
-    threading.Thread(target=run_web_server, daemon=True).start()
+def main():
+    init_db()
+
+    threading.Thread(
+        target=run_web_server,
+        daemon=True
+    ).start()
 
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("about", about))
+    app.add_handler(CommandHandler("stats", stats))
 
     app.add_handler(
         MessageHandler(
