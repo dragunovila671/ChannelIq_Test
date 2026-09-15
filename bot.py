@@ -135,6 +135,28 @@ def get_stats():
     conn.close()
 
     return total, today_users, week_users, active_24h
+    # =========================
+# 📊 КОМАНДА /STATS
+# =========================
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+
+    if not user or user.id != ADMIN_ID:
+        await update.message.reply_text(
+            "⛔ У тебя нет доступа к этой команде."
+        )
+        return
+
+    total, today, week, active = get_stats()
+
+    await update.message.reply_text(
+        f"📊 ChannelIQ — статистика\n\n"
+        f"👥 Всего пользователей: {total}\n"
+        f"🆕 Новых сегодня: {today}\n"
+        f"📅 Новых за 7 дней: {week}\n"
+        f"🟢 Активных за 24 часа: {active}"
+    )
 
 # =========================
 # 🏠 ГЛАВНОЕ МЕНЮ
@@ -187,15 +209,15 @@ def main_keyboard():
 # =========================
 # /START
 # =========================
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    register_user(update.effective_user)
+
     await update.message.reply_text(
         "🤖 ChannelIQ\n\n"
         "Твой помощник для развития YouTube-канала.\n\n"
         "Выбери нужную функцию 👇",
         reply_markup=main_keyboard()
     )
-
 
 # =========================
 # 📊 АНАЛИЗ
