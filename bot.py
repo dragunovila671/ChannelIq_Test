@@ -25,7 +25,7 @@ from telegram.ext import (
 # ==================================================
 
 TOKEN = os.getenv("BOT_TOKEN")
-
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 if not TOKEN:
     raise RuntimeError("Ошибка: переменная BOT_TOKEN не задана")
 # =========================
