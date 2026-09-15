@@ -40,9 +40,12 @@ MAIN_MENU = [
     ["📈 Развитие канала"],
     ["⚙️ Помощь", "ℹ️ О боте"]
 ]
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header("Content-type", "text/plain")
         self.end_headers()
         self.wfile.write(b"ChannelIQ is running!")
 
@@ -52,11 +55,15 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 def run_web_server():
     port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+
+    server = HTTPServer(
+        ("0.0.0.0", port),
+        HealthHandler
+    )
+
+    print(f"🌐 Web server запущен на порту {port}")
+
     server.serve_forever()
-   
-
-
 
 
 
@@ -923,14 +930,9 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Назад
     elif text == "⬅️ Главное меню":
         await back_to_main(update, context)
+ на порту {port}")
 
-    else:
-        await update.message.reply_text(
-            "🤔 Я пока не понял эту команду.\n\n"
-            "Нажми /start, чтобы открыть главное меню."
-        )
-
-
+   
 # =========================
 # 🚀 ЗАПУСК
 # =========================
