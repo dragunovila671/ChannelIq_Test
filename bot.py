@@ -930,7 +930,7 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Назад
     elif text == "⬅️ Главное меню":
         await back_to_main(update, context)
- на порту {port}")
+ 
 
    
 # =========================
